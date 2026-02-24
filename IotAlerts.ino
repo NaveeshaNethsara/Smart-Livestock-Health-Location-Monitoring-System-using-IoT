@@ -87,7 +87,7 @@ function fetchData() {
         if (!outOfRange) outAlert = false;
 
         if (temp > MAX_TEMP && !tempAlert) {
-            alert("🔥 WARNING: " + name + "'s temperature is too HIGH!");
+            alert("WARNING: " + name + "'s temperature is too HIGH!");
             tempAlert = true;
         }
 
