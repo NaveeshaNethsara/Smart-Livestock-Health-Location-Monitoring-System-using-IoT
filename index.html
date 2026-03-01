@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Livestock Temperature Monitor</title>
+</head>
+<body style="font-family: Arial; text-align: center; margin-top: 100px;">
+
+  <h1>🐄 Smart Livestock Monitoring</h1>
+  <h2>Temperature:</h2>
+  <h1 id="temp">Loading...</h1>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+
+  <script type="module">
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+    apiKey: "AIzaSyAu7nrubc0mqtKsmA22mgLLpQkYAkAEy74",
+    authDomain: "livestock-monitoring-sys-ad970.firebaseapp.com",
+    databaseURL: "https://livestock-monitoring-sys-ad970-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "livestock-monitoring-sys-ad970",
+    storageBucket: "livestock-monitoring-sys-ad970.firebasestorage.app",
+    messagingSenderId: "40818009732",
+    appId: "1:40818009732:web:593e9d4ff21b3897e944d1",
+    measurementId: "G-7FGRGXGPH5"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    const tempRef = ref(database, "livestock/temperature");
+
+    onValue(tempRef, (snapshot) => {
+      const data = snapshot.val();
+      document.getElementById("temp").innerText = data + " °C";
+    });
+
+  </script>
+
+</body>
+</html>
