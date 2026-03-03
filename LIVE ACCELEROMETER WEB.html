@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Livestock Accelerometer Monitor</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background-color: #111;
+      color: white;
+    }
+
+    .card {
+      background: #1e1e1e;
+      padding: 30px;
+      margin: 20px auto;
+      width: 300px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,255,0,0.3);
+    }
+
+    h1 {
+      color: #00ff99;
+    }
+
+    .value {
+      font-size: 28px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🐄 Livestock Motion Monitor</h1>
+
+<div class="card">
+  <div class="value">X: <span id="x">0</span></div>
+  <div class="value">Y: <span id="y">0</span></div>
+  <div class="value">Z: <span id="z">0</span></div>
+</div>
+
+<script>
+
+  // 🔥 PASTE YOUR FIREBASE WEB CONFIG HERE
+  var firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    databaseURL: "https://livestock-monitoring-sys-ad970-default-rtdb.asia-southeast1.firebasedatabase.app",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  var database = firebase.database();
+
+  // Listen for changes
+  database.ref("livestock/accelerometer").on("value", function(snapshot) {
+
+    var data = snapshot.val();
+
+    if (data) {
+      document.getElementById("x").innerText = data.x;
+      document.getElementById("y").innerText = data.y;
+      document.getElementById("z").innerText = data.z;
+    }
+  });
+
+</script>
+
+</body>
+</html>
