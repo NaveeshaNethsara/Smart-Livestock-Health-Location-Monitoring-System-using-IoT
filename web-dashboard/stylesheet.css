@@ -1,0 +1,100 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  background: #fff;
+  padding: 25px 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.1);
+  width: 350px;
+}
+
+/* Hide radio buttons */
+input[type="radio"] {
+  display: none;
+}
+
+/* Labels as tabs */
+label {
+  display: inline-block;
+  width: 50%;
+  padding: 10px 0;
+  font-weight: bold;
+  color: #666;
+  cursor: pointer;
+  text-align: center;
+  border-bottom: 2px solid transparent;
+  transition: color 0.3s ease, border-bottom-color 0.3s ease;
+}
+
+/* Highlight active tab with animated underline */
+input#login-tab:checked + label[for="login-tab"],
+input#register-tab:checked + label[for="register-tab"] {
+  color: #007bff;
+  border-bottom-color: #007bff;
+}
+
+/* Forms container */
+.forms form {
+  display: block;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.5s ease, max-height 0.5s ease;
+}
+
+/* Show login form with fade */
+#login-tab:checked ~ .forms #login-form {
+  opacity: 1;
+  max-height: 1000px; /* enough to fit form */
+  pointer-events: auto;
+}
+
+/* Show register form with fade */
+#register-tab:checked ~ .forms #register-form {
+  opacity: 1;
+  max-height: 1000px;
+  pointer-events: auto;
+}
+
+form {
+  margin-top: 20px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  margin: 8px 0 15px 0;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+input[type="submit"] {
+  background: #007bff; /* blue */
+  border: none;
+  color: white;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: bold;
+  width: 100%;
+  transition: background-color 0.4s ease, transform 0.2s ease;
+}
+
+input[type="submit"]:hover {
+  background: #5fff4d; 
+  transform: scale(1.05); 
+}
+
+
+small {
+  color: #666;
+}

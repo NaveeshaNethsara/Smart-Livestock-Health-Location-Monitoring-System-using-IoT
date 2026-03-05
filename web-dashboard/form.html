@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Login & Register Box</title>
+<link rel="stylesheet" href="stylesheet.css" />
+</head>
+<body>
+
+<div class="container">
+
+  
+  <input type="radio" name="tab" id="login-tab" checked>
+  <label for="login-tab">Login</label>
+
+  <input type="radio" name="tab" id="register-tab">
+  <label for="register-tab">Register</label>
+
+
+  <div class="forms">
+
+  
+ <!-- Login Form -->
+  <form id="login-form" action="DoLogin.php" method="post">
+  <input type="email" name="email" placeholder="Email" required>
+  <input type="password" name="password" placeholder="Password" required>
+ <input type="submit" name="submit" value="Register">
+  </form>
+
+
+    <!-- Register Form -->
+    <form id="register-form" action="DoRegister.php" method="post">
+
+      
+      <input type="text" name="name" placeholder="Name" required>
+      <input type="email" name="email" placeholder="Email" required>
+   
+      
+
+      <input type="password" name="password" placeholder="Password" required>
+      <input type="password" name="cpassword" placeholder="Confirm Password" required>
+      <input type="submit" value="Register">
+    </form>
+
+  </div>
+</div>
+
+</body>
+</html>
