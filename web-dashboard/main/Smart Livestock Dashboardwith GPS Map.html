@@ -7,53 +7,44 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 
 <style>
-
 body{
-margin:0;
-font-family:'Poppins',sans-serif;
-background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-color:white;
-text-align:center;
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  color:white;
+  text-align:center;
 }
-
-h1{
-margin-top:30px;
-}
-
+h1{ margin-top:30px; }
 .dashboard{
-display:flex;
-justify-content:center;
-flex-wrap:wrap;
-gap:30px;
-margin-top:40px;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:30px;
+  margin-top:40px;
 }
-
 .card{
-background:rgba(255,255,255,0.1);
-backdrop-filter:blur(15px);
-border-radius:20px;
-padding:30px;
-width:250px;
-box-shadow:0 8px 32px rgba(0,0,0,0.3);
+  background:rgba(255,255,255,0.1);
+  backdrop-filter:blur(15px);
+  border-radius:20px;
+  padding:30px;
+  width:250px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);
 }
-
 .value{
-font-size:40px;
-font-weight:700;
-margin-top:10px;
+  font-size:40px;
+  font-weight:700;
+  margin-top:10px;
 }
-
 .status-normal{color:#00ff88;}
 .status-warning{color:#ffcc00;}
 .status-danger{color:#ff4d4d;}
 
 #map{
-height:400px;
-width:80%;
-margin:40px auto;
-border-radius:15px;
+  height:400px;
+  width:80%;
+  margin:40px auto;
+  border-radius:15px;
 }
-
 </style>
 </head>
 
@@ -62,134 +53,117 @@ border-radius:15px;
 <h1>🐄 Smart Livestock Monitoring</h1>
 
 <div class="dashboard">
+  <div class="card">
+    <h2>🌡 Temperature</h2>
+    <div id="temperature" class="value">-- °C</div>
+  </div>
 
-<div class="card">
-<h2>🌡 Temperature</h2>
-<div id="temperature" class="value">-- °C</div>
-</div>
+  <div class="card">
+    <h2>❤️ Health Status</h2>
+    <div id="health" class="value">--</div>
+  </div>
 
-<div class="card">
-<h2>❤️ Health Status</h2>
-<div id="health" class="value">--</div>
-</div>
-
-<div class="card">
-<h2>🐾 Activity</h2>
-<div id="activity" class="value">--</div>
-</div>
-
+  <div class="card">
+    <h2>🐾 Activity</h2>
+    <div id="activity" class="value">--</div>
+  </div>
 </div>
 
 <h2>📍 Live Location</h2>
-
 <div id="map"></div>
 
-
-<!-- Firebase -->
+<!-- Firebase (ORDER IS IMPORTANT) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-
-apiKey: "YOUR_FIREBASE_API",
-authDomain: "livestock-monitoring-sys-ad970.firebaseapp.com",
-databaseURL: "https://livestock-monitoring-sys-ad970-default-rtdb.asia-southeast1.firebasedatabase.app",
-projectId: "livestock-monitoring-sys-ad970",
-storageBucket: "livestock-monitoring-sys-ad970.firebasestorage.app",
-messagingSenderId: "40818009732",
-appId: "1:40818009732:web:593e9d4ff21b3897e944d1"
-
+  apiKey: "AIzaSyAu7nrubc0mqtKsmA22mgLLpQkYAkAEy74",
+  authDomain: "livestock-monitoring-sys-ad970.firebaseapp.com",
+  databaseURL: "https://livestock-monitoring-sys-ad970-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "livestock-monitoring-sys-ad970",
+  storageBucket: "livestock-monitoring-sys-ad970.firebasestorage.app",
+  messagingSenderId: "40818009732",
+  appId: "1:40818009732:web:593e9d4ff21b3897e944d1",
+  measurementId: "G-7FGRGXGPH5"
 };
 
-firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp(firebaseConfig);
 
-const db = firebase.database();
+  // ✅ AUTH GUARD (ONLY ADDITION)
+  firebase.auth().onAuthStateChanged(function(user){
+    if(!user){
+      window.location.href = "login.html"; // must be in same folder
+    }
+  });
 
-let map;
-let marker;
+  const db = firebase.database();
 
-function initMap(){
+  let map;
+  let marker;
 
-map = new google.maps.Map(document.getElementById("map"),{
+  function initMap(){
+    map = new google.maps.Map(document.getElementById("map"),{
+      zoom:15,
+      center:{lat:0,lng:0}
+    });
 
-zoom:15,
-center:{lat:0,lng:0}
+    marker = new google.maps.Marker({
+      position:{lat:0,lng:0},
+      map:map
+    });
+  }
 
-});
+  db.ref("livestock/temperature").on("value",function(snapshot){
+    const v = snapshot.val();
+    if (v !== null && v !== undefined) {
+      document.getElementById("temperature").innerText = v + " °C";
+    }
+  });
 
-marker = new google.maps.Marker({
+  db.ref("livestock/healthStatus").on("value",function(snapshot){
+    const health = snapshot.val();
+    if (health === null || health === undefined) return;
 
-position:{lat:0,lng:0},
-map:map
+    let element=document.getElementById("health");
+    element.innerText=health;
+    element.className="value";
 
-});
+    if(health==="Normal"){
+      element.classList.add("status-normal");
+    } else if(health==="Low Temperature"){
+      element.classList.add("status-warning");
+    } else {
+      element.classList.add("status-danger");
+    }
+  });
 
-}
+  db.ref("livestock/activity").on("value",function(snapshot){
+    const v = snapshot.val();
+    if (v !== null && v !== undefined) {
+      document.getElementById("activity").innerText=v;
+    }
+  });
 
+  db.ref("livestock/gps").on("value",function(snapshot){
+    const data = snapshot.val();
+    if (!data || !marker || !map) return;
 
-db.ref("livestock/temperature").on("value",function(snapshot){
+    const lat = parseFloat(data.latitude);
+    const lng = parseFloat(data.longitude);
 
-document.getElementById("temperature").innerText =
-snapshot.val()+" °C";
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return;
 
-});
-
-
-db.ref("livestock/healthStatus").on("value",function(snapshot){
-
-let health=snapshot.val();
-let element=document.getElementById("health");
-
-element.innerText=health;
-element.className="value";
-
-if(health==="Normal"){
-
-element.classList.add("status-normal");
-
-}
-else if(health==="Low Temperature"){
-
-element.classList.add("status-warning");
-
-}
-else{
-
-element.classList.add("status-danger");
-
-}
-
-});
-
-
-db.ref("livestock/activity").on("value",function(snapshot){
-
-document.getElementById("activity").innerText=snapshot.val();
-
-});
-
-
-db.ref("livestock/gps").on("value",function(snapshot){
-
-let data=snapshot.val();
-
-let lat=parseFloat(data.latitude);
-let lng=parseFloat(data.longitude);
-
-let position={lat:lat,lng:lng};
-
-marker.setPosition(position);
-map.setCenter(position);
-
-});
-
+    const position = {lat:lat, lng:lng};
+    marker.setPosition(position);
+    map.setCenter(position);
+  });
 </script>
 
-
 <script async
-src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGVBIUj2WPWEgh0pJhiiugR-Beleaxc80&callback=initMap">
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGVBIUj2WPWEgh0pJhiiugR-Beleaxc80&callback=initMap">
 </script>
 
 </body>
