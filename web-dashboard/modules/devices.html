@@ -204,10 +204,13 @@ const card=`
 <h3>${data.animalName}</h3>
 
 <b>Animal ID:</b> ${child.key}<br>
-<b>Device ID:</b> ${data.deviceID}<br>
-<b>RFID:</b> ${data.rfid}<br>
-<b>Description:</b> ${data.description}<br>
-<b>Health:</b> ${data.health}
+<b>Animal Type:</b> ${data.animalType || ""}<br>
+<b>Breed:</b> ${data.breed || ""}<br>
+<b>Gender:</b> ${data.gender || ""}<br>
+<b>Age:</b> ${data.age || ""}<br>
+<b>RFID:</b> ${data.rfid || ""}<br>
+<b>Description:</b> ${data.description || ""}<br>
+<b>Health:</b> ${data.health || ""}
 
 <br><br>
 
@@ -252,11 +255,14 @@ document.getElementById("viewCard").innerHTML=`
 <b>Animal ID:</b> ${id}<br><br>
 
 <b>Name:</b> ${data.animalName}<br>
-<b>Breed:</b> ${data.breed}<br>
-<b>Age:</b> ${data.age}<br>
-<b>RFID:</b> ${data.rfid}<br>
-<b>Description:</b> ${data.description}<br>
-<b>Health:</b> ${data.health}
+<b>Animal Type:</b> ${data.animalType || ""}<br>
+<b>Breed:</b> ${data.breed || ""}<br>
+<b>Gender:</b> ${data.gender || ""}<br>
+<b>Age:</b> ${data.age || ""}<br>
+<b>Device ID:</b> ${data.deviceID || ""}<br>
+<b>RFID:</b> ${data.rfid || ""}<br>
+<b>Description:</b> ${data.description || ""}<br>
+<b>Health:</b> ${data.health || ""}
 
 `;
 
