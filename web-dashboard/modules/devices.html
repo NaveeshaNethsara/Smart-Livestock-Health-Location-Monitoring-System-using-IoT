@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Registered Devices</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+margin:0;
+font-family:Poppins;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:white;
+}
+
+/* TOP NAVBAR */
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px 28px;
+background:rgba(0,0,0,0.25);
+}
+
+.logo{
+font-size:22px;
+font-weight:700;
+}
+
+.nav button{
+border:none;
+border-radius:10px;
+padding:10px 16px;
+background:#00c853;
+color:white;
+cursor:pointer;
+margin-left:10px;
+font-weight:500;
+}
+
+.nav button:hover{
+opacity:0.85;
+}
+
+/* PAGE CONTENT */
+
+.container{
+padding:40px;
+}
+
+.device-card{
+background:rgba(255,255,255,0.1);
+padding:20px;
+border-radius:15px;
+margin-bottom:20px;
+}
+
+button{
+padding:10px 15px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+
+.view-btn{background:#00c853;color:white;}
+.edit-btn{background:gray;color:white;}
+.back-btn{background:#ff9800;color:white;}
+
+input,textarea{
+width:100%;
+padding:10px;
+margin-bottom:10px;
+border-radius:8px;
+border:none;
+}
+
+.hidden{
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- NAVIGATION BAR -->
+
+<div class="topbar">
+
+<div class="logo">🐄 Smart Livestock Monitoring</div>
+
+<div class="nav">
+<button onclick="location.href='dashboard.html'">Dashboard</button>
+<button onclick="location.href='devices.html'">Devices</button>
+<button onclick="location.href='register-animal.html'">Register Animal</button>
+<button style="background:#ff5252" onclick="location.href='login.html'">Logout</button>
+</div>
+
+</div>
+
+
+<div class="container">
+
+<h1>Registered Devices</h1>
+
+<h3>Total Devices: <span id="totalDevices">0</span></h3>
+
+<div id="deviceGrid"></div>
+
+
+<!-- VIEW PANEL -->
+
+<div id="viewPanel" class="hidden">
+
+<h2>Animal Details</h2>
+
+<div id="viewCard"></div>
+
+<br>
+<button class="back-btn" onclick="showDevices()">Back</button>
+
+</div>
+
+
+<!-- EDIT PANEL -->
+
+<div id="editPanel" class="hidden">
+
+<h2>Edit Animal</h2>
+
+<label>Animal ID</label>
+<input id="editID" disabled>
+
+<label>Name</label>
+<input id="editName">
+
+<label>Breed</label>
+<input id="editBreed">
+
+<label>Age</label>
+<input id="editAge">
+
+<label>RFID</label>
+<input id="editRFID">
+
+<label>Description</label>
+<textarea id="editDescription"></textarea>
+
+<label>Health</label>
+<input id="editHealth">
+
+<button onclick="updateAnimal()">Update</button>
+<button class="back-btn" onclick="showDevices()">Cancel</button>
+
+</div>
+
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+
+const firebaseConfig={
+apiKey:"AIzaSyBERXJfL-5rywH6We0tXnxn_5xcpUEGip0",
+databaseURL:"https://smart-livestock-system-default-rtdb.firebaseio.com",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+
+const grid=document.getElementById("deviceGrid");
+
+let animals=[];
+let currentID=null;
+
+
+function loadAnimals(){
+
+db.ref("animals").on("value",snap=>{
+
+animals=[];
+grid.innerHTML="";
+let count=0;
+
+snap.forEach(child=>{
+
+count++;
+
+const data=child.val();
+
+animals.push({
+id:child.key,
+...data
+});
+
+const card=`
+
+<div class="device-card">
+
+<h3>${data.animalName}</h3>
+
+<b>Animal ID:</b> ${child.key}<br>
+<b>Device ID:</b> ${data.deviceID}<br>
+<b>RFID:</b> ${data.rfid}<br>
+<b>Description:</b> ${data.description}<br>
+<b>Health:</b> ${data.health}
+
+<br><br>
+
+<button class="view-btn" onclick="viewAnimal('${child.key}')">View</button>
+<button class="edit-btn" onclick="editAnimal('${child.key}')">Edit</button>
+
+</div>
+
+`;
+
+grid.innerHTML+=card;
+
+});
+
+document.getElementById("totalDevices").innerText=count;
+
+});
+
+}
+
+
+function showDevices(){
+
+document.getElementById("viewPanel").classList.add("hidden");
+document.getElementById("editPanel").classList.add("hidden");
+
+grid.style.display="block";
+
+}
+
+
+function viewAnimal(id){
+
+const data=animals.find(a=>a.id===id);
+
+grid.style.display="none";
+
+document.getElementById("viewPanel").classList.remove("hidden");
+
+document.getElementById("viewCard").innerHTML=`
+
+<b>Animal ID:</b> ${id}<br><br>
+
+<b>Name:</b> ${data.animalName}<br>
+<b>Breed:</b> ${data.breed}<br>
+<b>Age:</b> ${data.age}<br>
+<b>RFID:</b> ${data.rfid}<br>
+<b>Description:</b> ${data.description}<br>
+<b>Health:</b> ${data.health}
+
+`;
+
+}
+
+
+function editAnimal(id){
+
+currentID=id;
+
+const data=animals.find(a=>a.id===id);
+
+grid.style.display="none";
+
+document.getElementById("editPanel").classList.remove("hidden");
+
+editID.value=id;
+editName.value=data.animalName;
+editBreed.value=data.breed;
+editAge.value=data.age;
+editRFID.value=data.rfid;
+editDescription.value=data.description;
+editHealth.value=data.health;
+
+}
+
+
+function updateAnimal(){
+
+db.ref("animals/"+currentID).update({
+
+animalName:editName.value,
+breed:editBreed.value,
+age:editAge.value,
+rfid:editRFID.value,
+description:editDescription.value,
+health:editHealth.value
+
+});
+
+alert("Animal Updated");
+
+showDevices();
+
+}
+
+
+loadAnimals();
+
+</script>
+
+</body>
+</html>

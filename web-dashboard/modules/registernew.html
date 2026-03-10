@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Register Animal - Smart Livestock</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+font-family:Poppins;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:white;
+}
+
+/* NAVBAR */
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px 28px;
+background:rgba(0,0,0,0.25);
+}
+
+.logo{
+font-size:22px;
+font-weight:700;
+}
+
+.nav button{
+border:none;
+border-radius:10px;
+padding:10px 16px;
+background:#00c853;
+color:white;
+cursor:pointer;
+margin-left:10px;
+font-weight:500;
+}
+
+.nav button:hover{
+opacity:0.85;
+}
+
+/* PAGE */
+
+.container{
+max-width:900px;
+margin:auto;
+padding:40px 20px;
+}
+
+.title{
+text-align:center;
+font-size:36px;
+font-weight:700;
+}
+
+.subtitle{
+text-align:center;
+opacity:0.8;
+margin-bottom:30px;
+}
+
+/* CARD */
+
+.card{
+background:rgba(255,255,255,0.08);
+border-radius:20px;
+padding:30px;
+}
+
+/* FORM GRID */
+
+.form-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+.field{
+display:flex;
+flex-direction:column;
+}
+
+.full{
+grid-column:span 2;
+}
+
+label{
+margin-bottom:6px;
+font-weight:500;
+}
+
+/* INPUTS */
+
+input,select,textarea{
+padding:12px;
+border:none;
+border-radius:10px;
+background:rgba(255,255,255,0.15);
+color:white;
+font-family:Poppins;
+}
+
+input::placeholder,
+textarea::placeholder{
+color:rgba(255,255,255,0.6);
+}
+
+textarea{
+min-height:120px;
+resize:vertical;
+}
+
+select{
+background:white;
+color:black;
+}
+
+/* BUTTONS */
+
+.actions{
+display:flex;
+gap:10px;
+justify-content:flex-end;
+margin-top:25px;
+}
+
+.btn{
+padding:12px 18px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-weight:600;
+}
+
+.primary{
+background:#00c853;
+color:white;
+}
+
+.primary:hover{
+background:#00b248;
+}
+
+.secondary{
+background:rgba(255,255,255,0.15);
+color:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+
+<div class="topbar">
+
+<div class="logo">🐄 Smart Livestock Monitering</div>
+
+<div class="nav">
+<button onclick="location.href='dashboard.html'">Dashboard</button>
+<button onclick="location.href='devices.html'">Devices</button>
+<button onclick="location.href='registernew.html'">Register Animal</button>
+<button style="background:#ff5252" onclick="location.href='login.html'">Logout</button>
+</div>
+
+</div>
+
+
+<div class="container">
+
+<div class="title">Register Animal</div>
+<div class="subtitle">Add a new animal and assign a wearable device</div>
+
+<div class="card">
+
+<div class="form-grid">
+
+<div class="field">
+<label>Animal Name</label>
+<input id="animalName" placeholder="Enter animal name">
+</div>
+
+<div class="field">
+<label>Animal Type</label>
+<select id="animalType">
+<option disabled selected>Select animal type</option>
+<option>Cow</option>
+<option>Goat</option>
+<option>Buffalo</option>
+<option>Sheep</option>
+</select>
+</div>
+
+<div class="field">
+<label>Breed</label>
+<input id="breed" placeholder="Enter breed">
+</div>
+
+<div class="field">
+<label>Gender</label>
+<select id="gender">
+<option disabled selected>Select gender</option>
+<option>Male</option>
+<option>Female</option>
+</select>
+</div>
+
+<div class="field">
+<label>Age</label>
+<input id="age" placeholder="Enter age">
+</div>
+
+<div class="field">
+<label>Device ID</label>
+<input id="deviceID" readonly>
+</div>
+
+<div class="field full">
+<label>RFID Tag</label>
+<input id="rfid" placeholder="Enter RFID tag">
+</div>
+
+<div class="field full">
+<label>Description</label>
+<textarea id="description" placeholder="Enter short animal description"></textarea>
+</div>
+
+<div class="field full">
+<label>Health Notes</label>
+<textarea id="health" placeholder="Health notes"></textarea>
+</div>
+
+</div>
+
+<div class="actions">
+<button class="btn secondary" onclick="location.href='devices.html'">Cancel</button>
+<button class="btn primary" onclick="registerAnimal()">Register Animal</button>
+</div>
+
+</div>
+
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+
+const firebaseConfig={
+apiKey:"AIzaSyBERXJfL-5rywH6We0tXnxn_5xcpUEGip0",
+databaseURL:"https://smart-livestock-system-default-rtdb.firebaseio.com"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+
+
+/* AUTO DEVICE ID */
+
+db.ref("deviceCounter").once("value").then(function(snapshot){
+
+let counter=snapshot.val() || 0;
+let next=counter+1;
+
+let deviceID="DEV"+next.toString().padStart(3,'0');
+
+document.getElementById("deviceID").value=deviceID;
+
+});
+
+
+function registerAnimal(){
+
+let name=document.getElementById("animalName").value;
+let type=document.getElementById("animalType").value;
+let breed=document.getElementById("breed").value;
+let gender=document.getElementById("gender").value;
+let age=document.getElementById("age").value;
+let rfid=document.getElementById("rfid").value;
+let description=document.getElementById("description").value;
+let health=document.getElementById("health").value;
+let deviceID=document.getElementById("deviceID").value;
+
+db.ref("animals/"+deviceID).set({
+
+deviceID:deviceID,
+animalName:name,
+animalType:type,
+breed:breed,
+gender:gender,
+age:age,
+rfid:rfid,
+description:description,
+health:health
+
+});
+
+db.ref("deviceCounter").once("value").then(function(snapshot){
+
+let counter=snapshot.val() || 0;
+counter++;
+db.ref("deviceCounter").set(counter);
+
+});
+
+alert("Animal Registered Successfully");
+
+location.href="devices.html";
+
+}
+
+</script>
+
+</body>
+</html>
