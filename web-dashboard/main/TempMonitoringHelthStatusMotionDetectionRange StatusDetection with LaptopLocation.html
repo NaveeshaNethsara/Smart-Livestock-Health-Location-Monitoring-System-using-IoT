@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Livestock Monitoring</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  color:white;
+  text-align:center;
+}
+h1{ margin-top:30px; }
+.dashboard{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:30px;
+  margin-top:40px;
+}
+.card{
+  background:rgba(255,255,255,0.1);
+  backdrop-filter:blur(15px);
+  border-radius:20px;
+  padding:30px;
+  width:250px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);
+}
+.value{
+  font-size:40px;
+  font-weight:700;
+  margin-top:10px;
+}
+.status-normal{color:#00ff88;}
+.status-warning{color:#ffcc00;}
+.status-danger{color:#ff4d4d;}
+
+#map{
+  height:400px;
+  width:80%;
+  margin:40px auto;
+  border-radius:15px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🐄 Smart Livestock Monitoring</h1>
+
+<div class="dashboard">
+  <div class="card">
+    <h2>🌡 Temperature</h2>
+    <div id="temperature" class="value">-- °C</div>
+  </div>
+
+  <div class="card">
+    <h2>❤️ Health Status</h2>
+    <div id="health" class="value">--</div>
+  </div>
+
+  <div class="card">
+    <h2>🐾 Activity</h2>
+    <div id="activity" class="value">--</div>
+  </div>
+
+  <div class="card">
+    <h2>📡 Range Status</h2>
+    <div id="rangeStatus" class="value">Waiting...</div>
+    <div id="distanceText" style="margin-top:10px;font-size:18px;">Distance: -- m</div>
+  </div>
+</div>
+
+<h2>📍 Live Location</h2>
+<div id="map"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAu7nrubc0mqtKsmA22mgLLpQkYAkAEy74",
+  authDomain: "livestock-monitoring-sys-ad970.firebaseapp.com",
+  databaseURL: "https://livestock-monitoring-sys-ad970-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "livestock-monitoring-sys-ad970",
+  storageBucket: "livestock-monitoring-sys-ad970.firebasestorage.app",
+  messagingSenderId: "40818009732",
+  appId: "1:40818009732:web:593e9d4ff21b3897e944d1",
+  measurementId: "G-7FGRGXGPH5"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+firebase.auth().onAuthStateChanged(function(user){
+  if(!user){
+    window.location.href = "login.html";
+  }
+});
+
+const db = firebase.database();
+
+let map;
+let marker;
+let fenceCircle;
+let laptopMarker;
+
+let centerLat = null;
+let centerLng = null;
+const radiusMeters = 150;
+
+// Haversine formula
+function getDistanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = (deg) => deg * Math.PI / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function updateRangeStatus(currentLat, currentLng) {
+  if (centerLat === null || centerLng === null) return;
+
+  const distance = getDistanceMeters(centerLat, centerLng, currentLat, currentLng);
+
+  const statusEl = document.getElementById("rangeStatus");
+  const distanceEl = document.getElementById("distanceText");
+
+  distanceEl.innerText = "Distance: " + distance.toFixed(2) + " m";
+  statusEl.className = "value";
+
+  if (distance <= radiusMeters) {
+    statusEl.innerText = "In Range";
+    statusEl.classList.add("status-normal");
+  } else {
+    statusEl.innerText = "Out of Range";
+    statusEl.classList.add("status-danger");
+  }
+}
+
+function initMap(){
+  const defaultPoint = {lat:6.9271, lng:79.8612};
+
+  map = new google.maps.Map(document.getElementById("map"),{
+    zoom:18,
+    center:defaultPoint
+  });
+
+  marker = new google.maps.Marker({
+    position:defaultPoint,
+    map:map,
+    title:"Animal Location"
+  });
+
+  laptopMarker = new google.maps.Marker({
+    position:defaultPoint,
+    map:map,
+    title:"Laptop Location",
+    icon:"http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+  });
+
+  fenceCircle = new google.maps.Circle({
+    strokeColor:"#00FF88",
+    strokeOpacity:0.8,
+    strokeWeight:2,
+    fillColor:"#00FF88",
+    fillOpacity:0.2,
+    map:map,
+    center:defaultPoint,
+    radius:radiusMeters
+  });
+
+  startLaptopTracking();
+}
+
+function startLaptopTracking() {
+  if (!navigator.geolocation) {
+    document.getElementById("rangeStatus").innerText = "Location Unsupported";
+    return;
+  }
+
+  navigator.geolocation.watchPosition(
+    function(position) {
+      centerLat = position.coords.latitude;
+      centerLng = position.coords.longitude;
+
+      const laptopPos = { lat: centerLat, lng: centerLng };
+
+      laptopMarker.setPosition(laptopPos);
+      fenceCircle.setCenter(laptopPos);
+
+      if (!marker.getPosition()) {
+        map.setCenter(laptopPos);
+      }
+    },
+    function(error) {
+      document.getElementById("rangeStatus").innerText = "Laptop Location Denied";
+      console.log(error);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 2000,
+      timeout: 10000
+    }
+  );
+}
+
+db.ref("livestock/temperature").on("value",function(snapshot){
+  const v = snapshot.val();
+  if (v !== null && v !== undefined) {
+    document.getElementById("temperature").innerText = v + " °C";
+  }
+});
+
+db.ref("livestock/healthStatus").on("value",function(snapshot){
+  const health = snapshot.val();
+  if (health === null || health === undefined) return;
+
+  let element = document.getElementById("health");
+  element.innerText = health;
+  element.className = "value";
+
+  if (health === "Normal") {
+    element.classList.add("status-normal");
+  } else if (health === "Low Temperature") {
+    element.classList.add("status-warning");
+  } else {
+    element.classList.add("status-danger");
+  }
+});
+
+db.ref("livestock/activity").on("value",function(snapshot){
+  const v = snapshot.val();
+  if (v !== null && v !== undefined) {
+    document.getElementById("activity").innerText = v;
+  }
+});
+
+db.ref("livestock/gps").on("value",function(snapshot){
+  const data = snapshot.val();
+  if (!data || !marker || !map) return;
+
+  const lat = parseFloat(data.latitude);
+  const lng = parseFloat(data.longitude);
+
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+  if (lat === 0 && lng === 0) return;
+
+  const position = {lat:lat, lng:lng};
+  marker.setPosition(position);
+
+  updateRangeStatus(lat, lng);
+});
+</script>
+
+<script async
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGVBIUj2WPWEgh0pJhiiugR-Beleaxc80&callback=initMap">
+</script>
+
+</body>
+</html>
