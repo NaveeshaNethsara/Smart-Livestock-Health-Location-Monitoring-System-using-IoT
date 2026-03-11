@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Devices - Smart Livestock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: white;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 28px;
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(10px);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      cursor: pointer;
+      font-weight: 500;
+      transition: 0.2s;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .nav button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .nav .logout-btn {
+      background: #ff4d4d;
+    }
+
+    .nav .logout-btn:hover {
+      background: #e24040;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: auto;
+      padding: 30px 20px 40px;
+    }
+
+    .page-title {
+      text-align: center;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      opacity: 0.82;
+      margin-bottom: 24px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .summary-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(14px);
+      border-radius: 18px;
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    .summary-card h3 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .summary-value {
+      font-size: 34px;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .summary-label {
+      margin-top: 6px;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    .tools-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 13px 14px;
+      border: none;
+      outline: none;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+    }
+
+    .search-box input::placeholder {
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .action-buttons button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      transition: 0.2s;
+    }
+
+    .primary-btn {
+      background: #00c853;
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #00b248;
+    }
+
+    .secondary-btn {
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+    }
+
+    .secondary-btn:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .message {
+      display: none;
+      margin-bottom: 20px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+
+    .message.info {
+      display: block;
+      background: rgba(255, 204, 0, 0.15);
+      border: 1px solid rgba(255, 204, 0, 0.35);
+      color: #fff2bf;
+    }
+
+    .message.error {
+      display: block;
+      background: rgba(255, 77, 77, 0.16);
+      border: 1px solid rgba(255, 77, 77, 0.4);
+      color: #ffd1d1;
+    }
+
+    .devices-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .device-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(14px);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      transition: 0.2s;
+    }
+
+    .device-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .animal-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+    }
+
+    .animal-sub {
+      font-size: 13px;
+      opacity: 0.82;
+      margin: 0;
+    }
+
+    .badge {
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.online {
+      background: rgba(0, 200, 83, 0.2);
+      color: #9dffbf;
+      border: 1px solid rgba(0, 200, 83, 0.4);
+    }
+
+    .badge.offline {
+      background: rgba(255, 77, 77, 0.18);
+      color: #ffb3b3;
+      border: 1px solid rgba(255, 77, 77, 0.38);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .info-label {
+      font-size: 12px;
+      opacity: 0.75;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .pill.normal {
+      background: rgba(0, 200, 83, 0.2);
+      color: #9dffbf;
+    }
+
+    .pill.low {
+      background: rgba(255, 204, 0, 0.2);
+      color: #ffe89b;
+    }
+
+    .pill.fever {
+      background: rgba(255, 77, 77, 0.2);
+      color: #ffb2b2;
+    }
+
+    .pill.resting,
+    .pill.walking,
+    .pill.running,
+    .pill.pending {
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+    }
+
+    .description-box {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .description-title {
+      font-size: 12px;
+      opacity: 0.75;
+      margin-bottom: 5px;
+    }
+
+    .description-text {
+      font-size: 13px;
+      line-height: 1.5;
+      opacity: 0.96;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .card-actions button {
+      flex: 1;
+      min-width: 120px;
+      border: none;
+      border-radius: 12px;
+      padding: 11px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      transition: 0.2s;
+    }
+
+    .view-btn {
+      background: #00c853;
+      color: white;
+    }
+
+    .view-btn:hover {
+      background: #00b248;
+    }
+
+    .map-btn {
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+    }
+
+    .map-btn:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .empty-state {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 28px;
+      opacity: 0.7;
+      font-size: 13px;
+    }
+
+    @media (max-width: 1100px) {
+      .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .devices-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .summary-grid,
+      .devices-grid,
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .logo {
+        text-align: center;
+      }
+
+      .nav {
+        justify-content: center;
+      }
+
+      .card-top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .card-actions button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="logo">🐄 Smart Livestock</div>
+
+    <div class="nav">
+      <button onclick="window.location.href='all animal dashboard.html'">Dashboard</button>
+      <button onclick="window.location.href='devices.html'">Devices</button>
+      <button onclick="window.location.href='register-animal.html'">Register Animal</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="page-title">Devices & Animals</div>
+    <div class="subtitle">View all registered animals, assigned devices, and live collar status</div>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <h3>📦 Total Devices</h3>
+        <div class="summary-value" id="totalDevices">0</div>
+        <div class="summary-label">Assigned devices</div>
+      </div>
+
+      <div class="summary-card">
+        <h3>🟢 Online</h3>
+        <div class="summary-value" id="onlineDevices">0</div>
+        <div class="summary-label">Devices sending live data</div>
+      </div>
+
+      <div class="summary-card">
+        <h3>🔴 Offline</h3>
+        <div class="summary-value" id="offlineDevices">0</div>
+        <div class="summary-label">Devices not active now</div>
+      </div>
+
+      <div class="summary-card">
+        <h3>📍 GPS Active</h3>
+        <div class="summary-value" id="gpsActiveDevices">0</div>
+        <div class="summary-label">Devices with valid location</div>
+      </div>
+    </div>
+
+    <div class="tools-bar">
+      <div class="search-box">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search by animal name, animal ID, device ID, RFID, type, breed..."
+        >
+      </div>
+
+      <div class="action-buttons">
+        <button class="secondary-btn" onclick="refreshDevices()">Refresh</button>
+        <button class="primary-btn" onclick="window.location.href='register-animal.html'">+ Register Animal</button>
+      </div>
+    </div>
+
+    <div id="messageBox" class="message"></div>
+
+    <div id="emptyState" class="empty-state">
+      No animals found. Register an animal first.
+    </div>
+
+    <div class="devices-grid" id="devicesGrid"></div>
+
+    <div class="footer">Smart IoT Livestock Monitoring System</div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAu7nrubc0mqtKsmA22mgLLpQkYAkAEy74",
+      authDomain: "livestock-monitoring-sys-ad970.firebaseapp.com",
+      databaseURL: "https://livestock-monitoring-sys-ad970-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "livestock-monitoring-sys-ad970",
+      storageBucket: "livestock-monitoring-sys-ad970.firebasestorage.app",
+      messagingSenderId: "40818009732",
+      appId: "1:40818009732:web:593e9d4ff21b3897e944d1"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const devicesGrid = document.getElementById("devicesGrid");
+    const emptyState = document.getElementById("emptyState");
+    const searchInput = document.getElementById("searchInput");
+    const messageBox = document.getElementById("messageBox");
+
+    let allAnimals = {};
+
+    function showMessage(type, text) {
+      messageBox.className = "message " + type;
+      messageBox.textContent = text;
+    }
+
+    function clearMessage() {
+      messageBox.className = "message";
+      messageBox.textContent = "";
+    }
+
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return "";
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    
+    function openAnimalDashboard(animalId) {
+      window.location.href = "individual dashboard.html?animalId=" + animalId;
+    }
+  
+
+    function formatTemperature(value) {
+      const temp = parseFloat(value);
+      if (isNaN(temp) || temp <= 0) return "-- °C";
+      return temp.toFixed(2) + " °C";
+    }
+
+    function getHealthClass(health) {
+      if (health === "Normal") return "normal";
+      if (health === "Low Temperature") return "low";
+      if (health === "Fever") return "fever";
+      return "pending";
+    }
+
+    function getActivityClass(activity) {
+      const val = String(activity || "").toLowerCase();
+      if (val === "resting") return "resting";
+      if (val === "walking") return "walking";
+      if (val === "running") return "running";
+      return "pending";
+    }
+
+    function formatLastUpdated(timestamp) {
+      const value = parseInt(timestamp, 10);
+      if (!value || value <= 0) return "No live update yet";
+
+      const date = new Date(value * 1000);
+      if (isNaN(date.getTime())) return "No live update yet";
+
+      return date.toLocaleString();
+    }
+
+    function hasValidGps(live) {
+      const lat = parseFloat(live?.gps?.latitude);
+      const lng = parseFloat(live?.gps?.longitude);
+      return !isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0);
+    }
+
+    function createDeviceCard(animalId, animal) {
+      const profile = animal.profile || {};
+      const live = animal.live || {};
+
+      const animalName = profile.name || "Unnamed Animal";
+      const animalType = profile.type || "--";
+      const breed = profile.breed || "--";
+      const gender = profile.gender || "--";
+      const age = profile.age !== undefined && profile.age !== null && profile.age !== "" ? profile.age : "--";
+      const deviceId = profile.deviceId || "--";
+      const rfid = profile.rfid || "--";
+      const description = profile.description || "No description added.";
+      const healthNotes = profile.healthNotes || "No health notes added.";
+
+      const online = live.online === true;
+      const onlineBadge = online
+        ? '<span class="badge online">Online</span>'
+        : '<span class="badge offline">Offline</span>';
+
+      const healthStatus = live.healthStatus || "Pending";
+      const activity = live.activity || "Pending";
+      const temperature = formatTemperature(live.temperature);
+      const lastUpdated = formatLastUpdated(live.lastUpdated);
+
+      return `
+        <div class="device-card" data-search="${escapeHtml(
+          (
+            animalId + " " +
+            animalName + " " +
+            animalType + " " +
+            breed + " " +
+            gender + " " +
+            deviceId + " " +
+            rfid
+          ).toLowerCase()
+        )}">
+          <div class="card-top">
+            <div>
+              <div class="animal-title">${escapeHtml(animalName)}</div>
+              <div class="animal-sub">${escapeHtml(animalId)} • ${escapeHtml(animalType)}</div>
+            </div>
+            ${onlineBadge}
+          </div>
+
+          <div class="info-grid">
+            <div class="info-box">
+              <div class="info-label">Device ID</div>
+              <div class="info-value">${escapeHtml(deviceId)}</div>
+            </div>
+
+            <div class="info-box">
+              <div class="info-label">RFID</div>
+              <div class="info-value">${escapeHtml(rfid)}</div>
+            </div>
+
+            <div class="info-box">
+              <div class="info-label">Breed</div>
+              <div class="info-value">${escapeHtml(breed)}</div>
+            </div>
+
+            <div class="info-box">
+              <div class="info-label">Gender / Age</div>
+              <div class="info-value">${escapeHtml(gender)} / ${escapeHtml(age)}</div>
+            </div>
+
+            <div class="info-box">
+              <div class="info-label">Temperature</div>
+              <div class="info-value">${escapeHtml(temperature)}</div>
+            </div>
+
+            <div class="info-box">
+              <div class="info-label">Last Updated</div>
+              <div class="info-value">${escapeHtml(lastUpdated)}</div>
+            </div>
+          </div>
+
+          <div class="status-row">
+            <span class="pill ${getHealthClass(healthStatus)}">${escapeHtml(healthStatus)}</span>
+            <span class="pill ${getActivityClass(activity)}">${escapeHtml(activity)}</span>
+          </div>
+
+          <div class="description-box">
+            <div class="description-title">Description</div>
+            <div class="description-text">${escapeHtml(description)}</div>
+          </div>
+
+          <div class="description-box">
+            <div class="description-title">Health Notes</div>
+            <div class="description-text">${escapeHtml(healthNotes)}</div>
+          </div>
+
+          <div class="card-actions">
+            <button class="view-btn" onclick="openAnimalDashboard('${encodeURIComponent(animalId)}')">View Dashboard</button>
+            <button class="map-btn" onclick="openAnimalMap(${parseFloat(live?.gps?.latitude) || 0}, ${parseFloat(live?.gps?.longitude) || 0})">Open Map</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAnimals(animals) {
+      const entries = Object.entries(animals || {});
+      const query = searchInput.value.trim().toLowerCase();
+
+      if (entries.length === 0) {
+        devicesGrid.innerHTML = "";
+        emptyState.style.display = "block";
+        updateSummaryCards({});
+        return;
+      }
+
+      const filteredEntries = entries.filter(([animalId, animal]) => {
+        const profile = animal.profile || {};
+        const haystack = [
+          animalId,
+          profile.name,
+          profile.type,
+          profile.breed,
+          profile.gender,
+          profile.deviceId,
+          profile.rfid
+        ].join(" ").toLowerCase();
+
+        return haystack.includes(query);
+      });
+
+      if (filteredEntries.length === 0) {
+        devicesGrid.innerHTML = "";
+        emptyState.style.display = "block";
+        emptyState.textContent = "No matching animals found.";
+      } else {
+        emptyState.style.display = "none";
+        emptyState.textContent = "No animals found. Register an animal first.";
+        devicesGrid.innerHTML = filteredEntries
+          .sort((a, b) => {
+            const nameA = (a[1]?.profile?.name || a[0]).toLowerCase();
+            const nameB = (b[1]?.profile?.name || b[0]).toLowerCase();
+            return nameA.localeCompare(nameB);
+          })
+          .map(([animalId, animal]) => createDeviceCard(animalId, animal))
+          .join("");
+      }
+
+      updateSummaryCards(animals);
+    }
+
+    function updateSummaryCards(animals) {
+      let totalDevices = 0;
+      let onlineDevices = 0;
+      let offlineDevices = 0;
+      let gpsActiveDevices = 0;
+
+      Object.keys(animals || {}).forEach((animalId) => {
+        const animal = animals[animalId] || {};
+        const profile = animal.profile || {};
+        const live = animal.live || {};
+
+        if (profile.deviceId && String(profile.deviceId).trim() !== "") {
+          totalDevices++;
+        } else {
+          totalDevices++;
+        }
+
+        if (live.online === true) {
+          onlineDevices++;
+        } else {
+          offlineDevices++;
+        }
+
+        if (hasValidGps(live)) {
+          gpsActiveDevices++;
+        }
+      });
+
+      document.getElementById("totalDevices").textContent = totalDevices;
+      document.getElementById("onlineDevices").textContent = onlineDevices;
+      document.getElementById("offlineDevices").textContent = offlineDevices;
+      document.getElementById("gpsActiveDevices").textContent = gpsActiveDevices;
+    }
+
+    function loadAnimals() {
+      clearMessage();
+
+      db.ref("animals").on("value", (snapshot) => {
+        allAnimals = snapshot.val() || {};
+        renderAnimals(allAnimals);
+      }, (error) => {
+        showMessage("error", error.message || "Failed to load animals.");
+      });
+    }
+
+    function refreshDevices() {
+      renderAnimals(allAnimals);
+      showMessage("info", "Device list refreshed.");
+      setTimeout(() => {
+        clearMessage();
+      }, 1200);
+    }
+
+    function openAnimalDashboard(animalId) {
+      window.location.href = "indiivdual dashboard for animal.html?animalId=" + animalId;
+    }
+
+    function openAnimalMap(lat, lng) {
+      if (!lat && !lng) {
+        alert("No valid GPS location available for this animal yet.");
+        return;
+      }
+
+      const mapsUrl = "https://www.google.com/maps?q=" + lat + "," + lng;
+      window.open(mapsUrl, "_blank");
+    }
+
+    async function logout() {
+      try {
+        await auth.signOut();
+        window.location.href = "login.html";
+      } catch (error) {
+        showMessage("error", error.message);
+      }
+    }
+
+    searchInput.addEventListener("input", () => {
+      renderAnimals(allAnimals);
+    });
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      loadAnimals();
+    });
+  </script>
+</body>
+</html>

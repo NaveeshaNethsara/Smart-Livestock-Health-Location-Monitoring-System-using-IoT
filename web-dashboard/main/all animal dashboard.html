@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Livestock Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <style>
+    body{
+      margin:0;
+      font-family:'Poppins',sans-serif;
+      background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+      color:white;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:15px 30px;
+      background:rgba(0,0,0,0.3);
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    .logo{
+      font-size:22px;
+      font-weight:700;
+    }
+
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .nav button{
+      padding:8px 14px;
+      border:none;
+      border-radius:8px;
+      background:#00c853;
+      color:white;
+      cursor:pointer;
+      font-family:'Poppins',sans-serif;
+    }
+
+    .nav button:hover{
+      background:#00b248;
+    }
+
+    .container{
+      padding:30px;
+    }
+
+    .cards{
+      display:flex;
+      flex-wrap:wrap;
+      gap:20px;
+      justify-content:center;
+      margin-bottom:30px;
+    }
+
+    .card{
+      background:rgba(255,255,255,0.1);
+      backdrop-filter:blur(10px);
+      padding:25px;
+      border-radius:15px;
+      width:220px;
+      text-align:center;
+      box-shadow:0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .card h3{
+      margin:0;
+      font-size:18px;
+    }
+
+    .big{
+      font-size:36px;
+      margin-top:10px;
+      font-weight:700;
+    }
+
+    .small-label{
+      display:block;
+      margin-top:8px;
+      opacity:0.85;
+      font-size:14px;
+    }
+
+    .status{
+      margin-top:10px;
+    }
+
+    .status span,
+    .activity span,
+    .devices-box span{
+      display:block;
+      margin-top:6px;
+      font-size:15px;
+    }
+
+    .normal{color:#00ff88;}
+    .low{color:#ffcc00;}
+    .fever{color:#ff4d4d;}
+
+    .online{color:#00ff88;}
+    .offline{color:#ff8080;}
+
+    .map-section{
+      margin-top:30px;
+    }
+
+    .map-section h2{
+      text-align:center;
+      margin-bottom:18px;
+    }
+
+    #map{
+      height:420px;
+      width:100%;
+      border-radius:15px;
+      background:rgba(255,255,255,0.1);
+    }
+
+    .footer{
+      text-align:center;
+      margin-top:20px;
+      opacity:0.7;
+      font-size:13px;
+    }
+
+    @media (max-width:768px){
+      .container{
+        padding:20px;
+      }
+
+      .card{
+        width:100%;
+        max-width:340px;
+      }
+
+      #map{
+        height:320px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="topbar">
+    <div class="logo">🐄 Smart Livestock Monitoring</div>
+
+    <div class="nav">
+      <button onclick="window.location.href='all animal dashboard.html'">Dashboard</button>
+      <button onclick="window.location.href='devices.html'">Devices</button>
+      <button onclick="window.location.href='register-animal.html'">Register Animal</button>
+      <button style="background:#ff4d4d;" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="cards">
+
+      <div class="card">
+        <h3>🌡 Average Temperature</h3>
+        <div class="big" id="avgTemp">-- °C</div>
+        <span class="small-label" id="animalCount">0 Animals</span>
+      </div>
+
+      <div class="card">
+        <h3>❤️ Health Status</h3>
+        <div class="status">
+          <span class="normal" id="normalCount">Normal: 0</span>
+          <span class="low" id="lowCount">Low Temp: 0</span>
+          <span class="fever" id="feverCount">Fever: 0</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🐾 Activity</h3>
+        <div class="activity">
+          <span id="restingCount">Resting: 0</span>
+          <span id="walkingCount">Walking: 0</span>
+          <span id="runningCount">Running: 0</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📡 Devices</h3>
+        <div class="big" id="onlineDevices">0</div>
+        <div class="devices-box">
+          <span class="online" id="onlineText">Online: 0</span>
+          <span class="offline" id="offlineText">Offline: 0</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="map-section">
+      <h2>📍 Live Animal Locations</h2>
+      <div id="map"></div>
+    </div>
+
+    <div class="footer">
+      Smart IoT Livestock Monitoring System
+    </div>
+
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAu7nrubc0mqtKsmA22mgLLpQkYAkAEy74",
+      authDomain: "livestock-monitoring-sys-ad970.firebaseapp.com",
+      databaseURL: "https://livestock-monitoring-sys-ad970-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "livestock-monitoring-sys-ad970",
+      storageBucket: "livestock-monitoring-sys-ad970.firebasestorage.app",
+      messagingSenderId: "40818009732",
+      appId: "1:40818009732:web:593e9d4ff21b3897e944d1"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    auth.onAuthStateChanged(function(user){
+      if(!user){
+        window.location.href = "login.html";
+      }
+    });
+
+    async function logout(){
+      try{
+        await auth.signOut();
+        window.location.href = "login.html";
+      }catch(error){
+        alert(error.message);
+      }
+    }
+
+    let map;
+    let markers = [];
+
+    function initMap(){
+      map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 7,
+        center: { lat: 7.8731, lng: 80.7718 } // Sri Lanka default center
+      });
+    }
+
+    function clearMarkers(){
+      for(let i = 0; i < markers.length; i++){
+        markers[i].setMap(null);
+      }
+      markers = [];
+    }
+
+    function addMapMarker(lat, lng, titleText){
+      if(!map) return;
+
+      const marker = new google.maps.Marker({
+        position: { lat: lat, lng: lng },
+        map: map,
+        title: titleText
+      });
+
+      markers.push(marker);
+    }
+
+    db.ref("animals").on("value", function(snapshot){
+      const animals = snapshot.val();
+
+      let totalAnimals = 0;
+      let totalTemp = 0;
+      let validTempCount = 0;
+
+      let normal = 0;
+      let low = 0;
+      let fever = 0;
+
+      let resting = 0;
+      let walking = 0;
+      let running = 0;
+
+      let onlineDevices = 0;
+      let offlineDevices = 0;
+
+      clearMarkers();
+
+      if (animals) {
+        Object.keys(animals).forEach(function(animalId){
+          totalAnimals++;
+
+          const animal = animals[animalId] || {};
+          const profile = animal.profile || {};
+          const live = animal.live || {};
+
+          const temp = parseFloat(live.temperature);
+          if (!isNaN(temp) && temp > 0) {
+            totalTemp += temp;
+            validTempCount++;
+          }
+
+          const health = (live.healthStatus || "").trim();
+          if (health === "Normal") {
+            normal++;
+          } else if (health === "Low Temperature") {
+            low++;
+          } else if (health === "Fever") {
+            fever++;
+          }
+
+          const activity = (live.activity || "").trim();
+          if (activity === "Resting") {
+            resting++;
+          } else if (activity === "Walking") {
+            walking++;
+          } else if (activity === "Running") {
+            running++;
+          }
+
+          if (live.online === true) {
+            onlineDevices++;
+          } else {
+            offlineDevices++;
+          }
+
+          const lat = parseFloat(live?.gps?.latitude);
+          const lng = parseFloat(live?.gps?.longitude);
+
+          if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
+            const animalName = profile.name ? profile.name : animalId;
+            addMapMarker(lat, lng, animalName + " (" + animalId + ")");
+          }
+        });
+      }
+
+      const avgTemp = validTempCount > 0 ? (totalTemp / validTempCount).toFixed(2) : "--";
+
+      document.getElementById("avgTemp").innerText = avgTemp === "--" ? "-- °C" : avgTemp + " °C";
+      document.getElementById("animalCount").innerText = totalAnimals + " Animals";
+
+      document.getElementById("normalCount").innerText = "Normal: " + normal;
+      document.getElementById("lowCount").innerText = "Low Temp: " + low;
+      document.getElementById("feverCount").innerText = "Fever: " + fever;
+
+      document.getElementById("restingCount").innerText = "Resting: " + resting;
+      document.getElementById("walkingCount").innerText = "Walking: " + walking;
+      document.getElementById("runningCount").innerText = "Running: " + running;
+
+      document.getElementById("onlineDevices").innerText = onlineDevices;
+      document.getElementById("onlineText").innerText = "Online: " + onlineDevices;
+      document.getElementById("offlineText").innerText = "Offline: " + offlineDevices;
+
+      if (map && markers.length > 0) {
+        const bounds = new google.maps.LatLngBounds();
+        markers.forEach(function(marker){
+          bounds.extend(marker.getPosition());
+        });
+        map.fitBounds(bounds);
+      }
+    });
+  </script>
+
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGVBIUj2WPWEgh0pJhiiugR-Beleaxc80&callback=initMap">
+  </script>
+
+</body>
+</html>
